@@ -18,8 +18,8 @@ class FeatureExtractor:
             fbank.append(np.mean(np.log(val), axis=1))
         mfcc = np.vstack(mfcc)
         fbank = np.vstack(fbank)
-        mfcc = pd.DataFrame(mfcc, columns=list(map(lambda i: f'mfcc_{i}', list(range(mfcc.shape[1])))))
-        fbank = pd.DataFrame(fbank, columns=list(map(lambda i: f'fbank_{i}', list(range(fbank.shape[1])))))
+        mfcc = pd.DataFrame(mfcc, columns=list(map(lambda j: "mfcc_{}".format(j), list(range(mfcc.shape[1])))))
+        fbank = pd.DataFrame(fbank, columns=list(map(lambda j: "fbank_{}".format(j), list(range(fbank.shape[1])))))
         return mfcc, fbank
 
 

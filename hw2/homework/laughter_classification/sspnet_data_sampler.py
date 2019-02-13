@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 import scipy.io.wavfile as wav
 
-from homework.laughter_classification.utils import chunks, in_any, interv_to_range, get_sname
-from homework.laughter_prediction.feature_extractors import FeatureExtractor
+from laughter_classification.utils import chunks, in_any, interv_to_range, get_sname
+from laughter_prediction.feature_extractors import FeatureExtractor
 
-from homework.laughter_prediction.sample_audio import sample_wav_by_time
+from laughter_prediction.sample_audio import sample_wav_by_time
 
 
 class SSPNetDataSampler:
