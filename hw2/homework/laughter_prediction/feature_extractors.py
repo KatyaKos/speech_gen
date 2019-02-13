@@ -1,19 +1,26 @@
 import os
 import tempfile
-
+import librosa
+import numpy as np
 import pandas as pd
-import laughter_classification.psf_features as psf_features
 
 
 class FeatureExtractor:
-    def extract_features(self, wav_path):
-        """
-        Extracts features for classification ny frames for .wav file
-
-        :param wav_path: string, path to .wav file
-        :return: pandas.DataFrame with features of shape (n_chunks, n_features)
-        """
-        raise NotImplementedError("Should have implemented this")
+    def extract_features(self, wav_path, frame_sec=0.01):
+        y, sr = librosa.load(wav_path, dtype=float)
+        size = int(sr * frame_sec)
+        mfcc = []
+        fbank = []
+        for i in range(0, len(y) - size, int(size / 5)):
+            val = librosa.feature.mfcc(y=y.astype(np.float)[i: i + int(size / 5)], sr=sr)
+            mfcc.append(np.mean(val, axis=1))
+            val = librosa.feature.melspectrogram(y=y.astype(np.float)[i: i + int(size / 5)], sr=sr)
+            fbank.append(np.mean(np.log(val), axis=1))
+        mfcc = np.vstack(mfcc)
+        fbank = np.vstack(fbank)
+        mfcc = pd.DataFrame(mfcc, columns=list(map(lambda i: f'mfcc_{i}', list(range(mfcc.shape[1])))))
+        fbank = pd.DataFrame(fbank, columns=list(map(lambda i: f'fbank_{i}', list(range(fbank.shape[1])))))
+        return mfcc, fbank
 
 
 class PyAAExtractor(FeatureExtractor):

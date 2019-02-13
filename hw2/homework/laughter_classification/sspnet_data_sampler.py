@@ -5,9 +5,10 @@ import numpy as np
 import pandas as pd
 import scipy.io.wavfile as wav
 
-from laughter_classification.utils import chunks, in_any, interv_to_range, get_sname
+from homework.laughter_classification.utils import chunks, in_any, interv_to_range, get_sname
+from homework.laughter_prediction.feature_extractors import FeatureExtractor
 
-from laughter_prediction.sample_audio import sample_wav_by_time
+from homework.laughter_prediction.sample_audio import sample_wav_by_time
 
 
 class SSPNetDataSampler:
@@ -56,7 +57,7 @@ class SSPNetDataSampler:
         laught_along = [1 if in_any(t, laughts) else 0 for t, _ in enumerate(audio)]
 
         frame_size = int(self.sample_rate * frame_sec)
-        is_laughter = np.array([self.most(la) for la in chunks(laught_along, frame_size)])
+        is_laughter = [self.most(laught_along[i: i + frame_size]) for i in range(0, self.default_len - frame_size, int(frame_size / 5))]
 
         df = pd.DataFrame({'IS_LAUGHTER': is_laughter,
                            'SNAME': sname})
@@ -69,9 +70,9 @@ class SSPNetDataSampler:
         :param frame_sec: int, length of each frame in sec
         :return: pandas.DataFrame with sampled audio
         """
-        data = sample_wav_by_time(wav_path, frame_sec)
+        mfcc, fbank = FeatureExtractor().extract_features(wav_path, frame_sec)
         labels = self.get_labels_for_file(wav_path, frame_sec)
-        df = pd.concat([data, labels], axis=1)
+        df = pd.concat([pd.concat([mfcc, fbank], axis=1), labels], axis=1)
         return df
 
     def get_valid_wav_paths(self):
@@ -91,11 +92,6 @@ class SSPNetDataSampler:
         fullpaths = self.get_valid_wav_paths()[:naudio]
         dataframes = [self.df_from_file(wav_path, frame_sec) for wav_path in fullpaths]
         df = pd.concat(dataframes)
-
-        colnames = ["V{}".format(i) for i in range(df.shape[1] - 2)]
-        colnames.append("IS_LAUGHTER")
-        colnames.append("SNAME")
-        df.columns = colnames
 
         if save_path is not None:
             if not os.path.isfile(save_path) or force_save:
