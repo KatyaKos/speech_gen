@@ -9,11 +9,7 @@ SR = 25000
 
 
 def is_format(file):
-    flag = False
-    n = len(file)
-    for format in FORMATS:
-        flag  = flag or file[n - len(format):] == format
-    return flag
+    return file.endswith('.wav') or file.endswith('.flac')
 
 
 def no_format(file):
@@ -21,7 +17,7 @@ def no_format(file):
     for format in FORMATS:
         if file[n - len(format):] == format:
             return file[:n - len(format)]
-    return "unknown"
+    return None
 
 
 def load_audio_sec(file_path, sr=SR):
@@ -33,18 +29,12 @@ def load_audio_sec(file_path, sr=SR):
     return data
 
 
-def choose_noise(dir):
-    n = 0
+def get_noises(dir):
+    files = []
     for file in os.listdir(dir):
         if is_format(file):
-            n += 1
-    i = random.randrange(n)
-    for file in os.listdir(dir):
-        if is_format(file):
-            if i == 0:
-                return file
-            i -= 1
-    return None
+            files.append(file)
+    return files
 
 
 def main():
@@ -56,19 +46,18 @@ def main():
     parser.add_argument('-n', '--noise', help='Path to directory with noises.',
                         default='noise/')
     args = parser.parse_args()
+    noises = get_noises(args.noise)
+    noises_num = len(noises)
 
     for input_file in os.listdir(args.input):
         if is_format(input_file):
             audio = load_audio_sec(os.path.join(args.input, input_file))
-            noise_file = choose_noise(args.noise)
-            if noise_file is None:
-                print("ERROR! No noise was chosen")
-                exit(1)
+            noise_file = noises[np.random.choice(noises_num)]
             noise = load_audio_sec(os.path.join(args.noise, noise_file))
 
             audio += 0.005 * noise
-            librosa.output.write_wav(os.path.join(args.output, no_format(input_file) + no_format(noise_file) + ".wav"),
-                                     audio, sr=SR)
+            new_name = os.path.join(os.path.join(no_format(input_file), no_format(noise_file)), ".wav")
+            librosa.output.write_wav(os.path.join(args.output,  new_name), audio, sr=SR)
 
 
 if __name__ == '__main__':
